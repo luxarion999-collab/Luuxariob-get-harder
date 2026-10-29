@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aim Trainer</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; margin-top: 50px; }
+    input, button { padding: 10px; margin: 10px; font-size: 16px; border-radius: 5px; border: none; }
+    button { background-color: #007bff; color: white; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    #gameScreen { display: none; }
+  </style>
+</head>
+<body>
+  <div id="loginScreen">
+    <h1>Inserisci la tua Chiave</h1>
+    <input type="text" id="keyInput" placeholder="Inserisci chiave...">
+    <button onclick="checkKey()">Accedi</button>
+  </div>
+
+  <div id="gameScreen">
+    <h1>Aim Trainer</h1>
+    <p>Benvenuto! Il sistema è pronto, senza attese e sempre attivo 24/7.</p>
+  </div>
+
+  <script>
+    // Elenco delle chiavi valide per l'accesso
+    const validKeys = ["KEY123", "LUX-AIM-2026", "SECRETKEY"];
+
+    function checkKey() {
+      const input = document.getElementById("keyInput").value.trim();
+      if (validKeys.includes(input)) {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("gameScreen").style.display = "block";
+      } else {
+        alert("Chiave non valida!");
+      }
+    }
+  </script>
+</body>
+</html>
