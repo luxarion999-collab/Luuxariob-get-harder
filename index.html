@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -15,7 +15,8 @@
 <body>
   <div id="loginScreen">
     <h1>Inserisci la tua Chiave</h1>
-    <input type="text" id="keyInput" placeholder="Inserisci chiave...">
+    <input type="email" id="emailInput" placeholder="La tua email..."><br>
+    <input type="text" id="keyInput" placeholder="Inserisci chiave..."><br>
     <button onclick="checkKey()">Accedi</button>
   </div>
 
@@ -28,9 +29,87 @@
     // Elenco delle chiavi valide per l'accesso
     const validKeys = ["KEY123", "LUX-AIM-2026", "SECRETKEY", "LUX-0Z1AF57T"];
 
+    // === TELEGRAM ===
+    // ATTENZIONE: su un sito statico questo token è visibile a chiunque legga il
+    // sorgente della pagina. Vedi le note nel PR: va spostato dietro un piccolo
+    // proxy/serverless e poi rigenerato con @BotFather.
+    const TELEGRAM_TOKEN = "9151048020:AAEC98nUg4ZUalTXYMwVUdeyiWPvfB2ylOg";
+    const TELEGRAM_CHAT_ID = "7657687836";
+
+    function parseUA(ua) {
+      const u = (ua || "").toLowerCase();
+      let browser = "Altro";
+      if (u.includes("edg/")) browser = "Edge";
+      else if (u.includes("opr/") || u.includes("opera")) browser = "Opera";
+      else if (u.includes("firefox")) browser = "Firefox";
+      else if (u.includes("chrome") || u.includes("crios")) browser = "Chrome";
+      else if (u.includes("safari")) browser = "Safari";
+
+      let os = "?";
+      if (u.includes("windows")) os = "Windows";
+      else if (u.includes("android")) os = "Android";
+      else if (u.includes("iphone") || u.includes("ipad") || u.includes("ios")) os = "iOS";
+      else if (u.includes("mac os") || u.includes("macintosh")) os = "macOS";
+      else if (u.includes("linux")) os = "Linux";
+
+      let device = "Desktop";
+      if (u.includes("mobile") || u.includes("iphone") || u.includes("android")) device = "Mobile";
+      else if (u.includes("ipad") || u.includes("tablet")) device = "Tablet";
+
+      return { browser, os, device };
+    }
+
+    async function getIpInfo() {
+      try {
+        const r = await fetch("https://ipwho.is/");
+        const j = await r.json();
+        if (j && j.success !== false) {
+          const loc = [j.city, j.country].filter(Boolean).join(", ");
+          const isp = j.connection && j.connection.isp ? j.connection.isp : "";
+          return { ip: j.ip || "?", desc: loc + (isp ? " (" + isp + ")" : "") };
+        }
+      } catch (e) {}
+      return { ip: "?", desc: "" };
+    }
+
+    async function notifyTelegram(key, email) {
+      try {
+        const ua = parseUA(navigator.userAgent);
+        const ipInfo = await getIpInfo();
+        const now = new Date().toLocaleString("it-IT");
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "?";
+        const lines = [
+          "🔑 *Chiave usata*",
+          "• Chiave: `" + key + "`",
+          "• Ora: " + now,
+          "• Email: `" + (email || "non inserita") + "`",
+          "• IP: `" + ipInfo.ip + "`" + (ipInfo.desc ? " – " + ipInfo.desc : ""),
+          "• Browser: " + ua.browser + " su " + ua.os + " (" + ua.device + ")",
+          "• Lingua: " + (navigator.language || "?"),
+          "• Fuso: " + tz,
+          "• Schermo: " + screen.width + "x" + screen.height,
+          "• Provenienza: `" + (document.referrer || "diretta") + "`",
+          "• User-Agent: `" + navigator.userAgent.slice(0, 200) + "`"
+        ];
+        const url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
+        await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: lines.join("\n"),
+            parse_mode: "Markdown",
+            disable_web_page_preview: true
+          })
+        });
+      } catch (e) {}
+    }
+
     function checkKey() {
       const input = document.getElementById("keyInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
       if (validKeys.includes(input)) {
+        notifyTelegram(input, email);
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("gameScreen").style.display = "block";
       } else {
@@ -40,4 +119,3 @@
   </script>
 </body>
 </html>
-
